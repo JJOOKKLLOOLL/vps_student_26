@@ -19,7 +19,7 @@ def group_by_ip(log_lines: list[str]) -> dict[str, int]:
     Кейс 2: Группировка атак по IP (Агрегация через dict).
     Подсчитывает общее число неудачных попыток входа для каждого IP-адреса.
     """
-    counts = {}
+    counts: dict[str, int] = {}
     for line in log_lines:
         ip = extract_ip(line)
         if ip:
