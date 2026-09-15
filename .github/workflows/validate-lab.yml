@@ -1,0 +1,48 @@
+name: Проверка Лабораторной Работы Mini-SOC
+
+# Сценарий запускается автоматически при любом Pull Request в ветку main
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  validate-student-code:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Скачиваем код из Pull Request студента
+    - name: Checkout student code
+      uses: actions/checkout@v4
+
+    # 2. Устанавливаем Python версии 3.12 (как на вашем сервере VPS)
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    # 3. Безопасное переименование шаблонов (на случай, если студент забыл переименовать файлы локально)
+    - name: Prepare student files
+      run: |
+        if [ -f "vps_soc_analyzer_template.py" ]; then mv vps_soc_analyzer_template.py vps_soc_analyzer.py; fi
+        if [ -f "vps_soc_main_template.py" ]; then mv vps_soc_main_template.py vps_soc_main.py; fi
+        if [ -f "test_vps_soc_template.py" ]; then mv test_vps_soc_template.py test_vps_soc.py; fi
+
+    # 4. Устанавливаем необходимые библиотеки и инструменты статического анализа
+    - name: Install dependencies
+      continue-on-error: true
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install mypy
+
+    # 5. Автоматическая проверка аннотаций типов (Type Hints) у студента
+    - name: Check Type Hints (mypy)
+      run: |
+        echo "=== ПРОВЕРКА АННОТАЦИЙ ТИПОВ ==="
+        mypy --disallow-untyped-defs vps_soc_analyzer.py
+
+    # 6. Запуск автоматических юнит-тестов
+    - name: Run unit tests
+      run: |
+        echo "=== ЗАПУСК ЮНИТ-ТЕСТОВ ==="
+        python -m unittest test_vps_soc.py
